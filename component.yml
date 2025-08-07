@@ -1,0 +1,11 @@
+---
+id: "ingredient:metatags"
+name: "Meta Tags Ingredient"
+type: "ingredient"
+version: 1.0
+description: "This is an ingredient that adds extra meta tags (like Highwire Press) to your abstract pages to help Google Scholar."
+requires:
+  - component: "core"
+    version: ">= 3.5.0"
+notes: "This can be installed by dropping into the ingredients sub-directory and adding to your archive's package.yml"
+readme: "https://github.com/eprints/metatags/blob/master/README.md"

@@ -98,11 +98,9 @@ sub convert_dataobj
 	push @tags, [ 'citation_isbn', $eprint->get_value( 'isbn' ) ] if $eprint->exists_and_set( 'isbn' );
 	push @tags, [ 'citation_volume', $eprint->get_value( 'volume' ) ] if $eprint->exists_and_set( 'volume' );
 	push @tags, [ 'citation_issue', $eprint->get_value( 'number' ) ] if $eprint->exists_and_set( 'number' );
-	my $pagerange = $eprint->get_value( 'pagerange' );
-	if( defined $pagerange && $pagerange =~ m/^(\d+)-(\d+)$/ ) {
-		push @tags, [ 'citation_firstpage', $1 ];
-		push @tags, [ 'citation_lastpage', $2 ];
-	}
+	my( $firstpage, $lastpage ) = split_pagerange( $eprint );
+	push @tags, [ 'citation_firstpage', $firstpage ] if defined $firstpage;
+	push @tags, [ 'citation_lastpage', $lastpage ] if defined $lastpage;
 
 	# E. For theses, dissertations and technical reports provide the remaining
 	#    data in 'citation_dissertation_institution', 'citation_technical_report_institution' and
@@ -151,6 +149,42 @@ sub convert_dataobj
 
 =over 4
 
+=item ( $from, $to ) = HighwirePress::split_pagerange( $eprint )
+
+Splits the pagerange from the given C<$eprint> into its first page and last
+page as done by C<EPrints::MetaField::Pagerange::render_single_value>. If
+either of these values cannot be gleaned from this eprint they will return
+C<undef>.
+
+=cut
+sub split_pagerange
+{
+	my( $eprint ) = @_;
+
+	return( undef, undef ) unless $eprint->exists_and_set( 'pagerange' );
+	my $range = $eprint->get_value( 'pagerange' );
+
+	# Based on `EPrints::MetaField::Pagerange::render_single_value`
+	if( $range =~ /^([1-9]\d*)$/ ) {
+		return( $1, undef );
+	} elsif( my( $from, $to ) = $range =~ m/^([^-]+)-(.+)$/ ) {
+		# If there are multiple '-' we assume that the one which defines the
+		# range is in the middle of the string and split on that one.
+		my $count = $range =~ tr/-//;
+		if( $count > 1 ) {
+			my $middle = int( ($count - 1) / 2 );
+			# Capture `$middle` instances of '<text>-' followed by '<text>' as
+			# the first group, with everything after the following hyphen in
+			# the second group.
+			( $from, $to ) = $range =~ m/^((?:[^-]+-){$middle}[^-]+)-(.+)$/;
+		}
+
+		return( $from, $to );
+	} else {
+		return( undef, undef );
+	}
+}
+
 =item $parsed_date = $plugin->get_earliest_date( $eprint, [ $date_type, ... ] )
 
 Returns the earliest date with an appropriate C<$date_type> from the given
@@ -171,7 +205,7 @@ sub get_earliest_date
 
 	for my $date (@{$eprint->get_value( 'dates' )}) {
 		for my $type (@types) {
-			if( $date->{date_type} eq $type ) {
+			if( defined $date->{date_type} && $date->{date_type} eq $type ) {
 				my $parsed_date = parse_date( $date->{date} );
 				if( !defined $early_date || $early_date gt $parsed_date ) {
 					$early_date = $parsed_date;
@@ -185,8 +219,8 @@ sub get_earliest_date
 
 =item $parsed_date = HighwirePress::parse_date( $date )
 
-Takes datetimes in EPrints format (%Y-%m-%d %H...) and outputs them as Highwire
-Press expects (%Y/%m/%d).
+Takes datetimes in EPrints format (%Y-%m-%d %H:%M:%S) and outputs them as
+Google Scholar expects (%Y/%m/%d).
 
 =cut
 sub parse_date
@@ -194,7 +228,7 @@ sub parse_date
 	my( $date ) = @_;
 
 	my $parsed_date;
-	if( $date =~ m/^(\d+)(?:-(\d+))?(?:-(\d+))?/ ) {
+	if( $date =~ m/^(\d+)(?:-(\d+)(?:-(\d+))?)?/ ) {
 		$parsed_date = $1;
 		$parsed_date .= "/$2" if defined $2;
 		$parsed_date .= "/$3" if defined $3;

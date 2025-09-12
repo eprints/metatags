@@ -144,7 +144,18 @@ sub convert_dataobj
 	}
 
 	my $keywords = '';
-	$keywords = $eprint->get_value( 'keywords' ) if $eprint->exists_and_set( 'keywords' );
+	if( $eprint->exists_and_set( 'keywords' ) ) {
+		# Keywords should be separated by semicolons according to Zotero so
+		# this converts newlines and commas into semicolons (with consistent
+		# spacing)
+		for my $keyword (split /[\n,;]/, $eprint->get_value( 'keywords' )) {
+			# Trim leading and trailing spaces
+			$keyword =~ s/^\s+|\s+$//g;
+			$keywords .= '; ' if $keywords ne '';
+			$keywords .= $keyword;
+		}
+		push @tags, [ 'citation_keywords', $keywords ];
+	}
 	if( $eprint->exists_and_set( 'subjects' ) ) {
 		for my $subject (@{$eprint->get_value( 'subjects' )}) {
 			my $subject_obj = EPrints::DataObj::Subject->new( $plugin->{repository}, $subject );

@@ -154,7 +154,6 @@ sub convert_dataobj
 			$keywords .= '; ' if $keywords ne '';
 			$keywords .= $keyword;
 		}
-		push @tags, [ 'citation_keywords', $keywords ];
 	}
 	if( $eprint->exists_and_set( 'subjects' ) ) {
 		for my $subject (@{$eprint->get_value( 'subjects' )}) {

@@ -123,10 +123,19 @@ sub convert_dataobj
 
 	# 4.2.24 prism:event
 	push @tags, [ 'prism.event', $eprint->get_value( 'event_title' ) ] if $eprint->exists_and_set( 'event_title' );
-	# 4.2.39 prism:keyword
-	push @tags, [ 'prism.keyword', $eprint->get_value( 'keywords' ) ] if $eprint->exists_and_set( 'keywords' );
 	# 4.2.41 prism:link
 	push @tags, [ 'prism.link', $eprint->get_value( 'official_url' ) ] if $eprint->exists_and_set( 'official_url' );
+
+	# 4.2.39 prism:keyword
+	push @tags, [ 'prism.keyword', $eprint->get_value( 'keywords' ) ] if $eprint->exists_and_set( 'keywords' );
+	if( $eprint->exists_and_set( 'subjects' ) ) {
+		for my $subject (@{$eprint->get_value( 'subjects' )}) {
+			my $subject_obj = EPrints::DataObj::Subject->new( $plugin->{repository}, $subject );
+			my $subject_name = $subject_obj->render_description();
+
+			push @tags, [ 'prism.keyword', $subject_name ];
+		}
+	}
 
 	return \@tags;
 }

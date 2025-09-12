@@ -123,10 +123,28 @@ sub convert_dataobj
 
 	# 4.2.24 prism:event
 	push @tags, simple_value( $eprint, 'event_title' => 'event' );
-	# 4.2.39 prism:keyword
-	push @tags, simple_value( $eprint, 'keywords' => 'keyword' );
 	# 4.2.41 prism:link
 	push @tags, simple_value( $eprint, 'official_url' => 'link' );
+
+	if( $eprint->exists_and_set( 'keywords' ) ) {
+		my $keywords = $eprint->get_value( 'keywords' );
+		# There should be zero or more instances of 'prism:keyword' so we split
+		# our keywords on newlines, commas and semicolons
+		for my $keyword (split /[\n,;]/, $keywords) {
+			# Trim leading and trailing spaces
+			$keyword =~ s/^\s+|\s+$//g;
+			# 4.2.39 prism:keyword
+			push @tags, [ 'prism.keyword', $keyword ];
+		}
+	}
+	if( $eprint->exists_and_set( 'subjects' ) ) {
+		for my $subject (@{$eprint->get_value( 'subjects' )}) {
+			my $subject_obj = EPrints::DataObj::Subject->new( $plugin->{repository}, $subject );
+			my $subject_name = $subject_obj->render_description();
+
+			push @tags, [ 'prism.keyword', $subject_name ];
+		}
+	}
 
 	return \@tags;
 }

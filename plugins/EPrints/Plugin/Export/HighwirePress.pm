@@ -257,7 +257,7 @@ sub get_earliest_date
 		for my $type (@types) {
 			if( defined $date->{date_type} && $date->{date_type} eq $type ) {
 				my $parsed_date = parse_date( $date->{date} );
-				if( !defined $early_date || $early_date gt $parsed_date ) {
+				if( defined $parsed_date && ( !defined $early_date || $early_date gt $parsed_date ) ) {
 					$early_date = $parsed_date;
 				}
 			}
@@ -278,7 +278,7 @@ sub parse_date
 	my( $date ) = @_;
 
 	my $parsed_date;
-	if( $date =~ m/^(\d+)(?:-(\d+)(?:-(\d+))?)?/ ) {
+	if( defined $date && $date =~ m/^(\d+)(?:-(\d+)(?:-(\d+))?)?/ ) {
 		$parsed_date = $1;
 		$parsed_date .= "/$2" if defined $2;
 		$parsed_date .= "/$3" if defined $3;

@@ -121,8 +121,9 @@ sub convert_dataobj
 	}
 
 	# Suggested by https://www.zotero.org/support/dev/exposing_metadata
-	push @tags, [ 'citation_date', $publication_date || $online_date ] if defined $publication_date || $online_date;
-	push @tags, [ 'citation_cover_date', $publication_date ] if defined $publication_date;
+	# Google Scholar does not recommend using these if already using citation_publication_date and/or citation_online_date
+	#push @tags, [ 'citation_date', $publication_date || $online_date ] if defined $publication_date || $online_date;
+	#push @tags, [ 'citation_cover_date', $publication_date ] if defined $publication_date;
 	push @tags, simple_value( $eprint, 'book_title' );
 	push @tags, simple_value( $eprint, 'series' => 'series_title' );
 	push @tags, simple_value( $eprint, 'publisher' );

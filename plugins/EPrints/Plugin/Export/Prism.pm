@@ -79,8 +79,6 @@ sub convert_dataobj
 	# (https://www.w3.org/submissions/2020/SUBM-prism-20200910/prism-basic.html#_Toc46322886)
 
 	my $publication_date = $plugin->get_earliest_date( $eprint, 'published', 'published_online' );
-	# 4.2.14 prism:coverDate
-	push @tags, [ 'prism.coverDate', $publication_date ] if defined $publication_date;
 	# 4.2.59 prism:publicationDate
 	push @tags, [ 'prism.publicationDate', $publication_date ] if defined $publication_date;
 	# 4.2.17 prism:dateReceived
@@ -193,6 +191,11 @@ sub get_earliest_date
 			$early_date = parse_date( $eprint->get_value( 'date' ) );
 		}
 	}
+	# Assume that if there is no date_type field then date is a publication date.
+	if( ! $eprint->{dataset}->has_field( 'date_type' ) || ! $eprint->get_value( 'date_type' ) )
+	{
+		$early_date = parse_date( $eprint->get_value( 'date' ) );
+	}
 	return $early_date unless $eprint->exists_and_set( 'dates' );
 
 	for my $date (@{$eprint->get_value( 'dates' )}) {
@@ -220,7 +223,7 @@ sub parse_date
 	my( $date ) = @_;
 
 	my $parsed_date;
-	if( defined $date && $date =~ m/^(\d+(?:-\d+(?:-\d+)?)?)(?: (\d+:\d+:\d+))/ ) {
+	if( defined $date && $date =~ m/^(\d+(?:-\d+(?:-\d+)?)?)(?: (\d+:\d+:\d+))?/ ) {
 		$parsed_date = $1;
 		$parsed_date .= "T$2" if defined $2;
 	}

@@ -252,6 +252,11 @@ sub get_earliest_date
 			$early_date = parse_date( $eprint->get_value( 'date' ) );
 		}
 	}
+	# Assume that if there is no date_type field then date is a publication date.
+	if( ! $eprint->{dataset}->has_field( 'date_type' ) || ! $eprint->get_value( 'date_type' ) )
+	{
+		$early_date = parse_date( $eprint->get_value( 'date' ) );
+	}
 	return $early_date unless $eprint->exists_and_set( 'dates' );
 
 	for my $date (@{$eprint->get_value( 'dates' )}) {
